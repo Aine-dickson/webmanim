@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebManim Docs Viewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+  <link id="md-theme-css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-light.min.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #162131;
+      --muted: #4f6079;
+      --line: #d6deea;
+      --accent: #0f766e;
+      --accent-2: #0d9488;
+      --topbar-bg: rgba(255, 255, 255, 0.92);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0d1422;
+      --card: #0f1b2f;
+      --text: #d7e4f9;
+      --muted: #93a8c6;
+      --line: #253857;
+      --accent: #22c1b4;
+      --accent-2: #14b8a6;
+      --topbar-bg: rgba(15, 27, 47, 0.92);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 600px at 0% 0%, #d9f4ee 0%, var(--bg) 45%, #eef5ff 100%);
+      color: var(--text);
+      font-family: "JetBrains Mono", monospace;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    :root[data-theme="dark"] body {
+      background: radial-gradient(1200px 600px at 0% 0%, #133137 0%, var(--bg) 45%, #1a2238 100%);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--topbar-bg);
+      backdrop-filter: blur(6px);
+    }
+
+    .brand {
+      font-family: "Syne", sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: 1.05rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      text-decoration: none;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .btn.secondary {
+      color: var(--text);
+      background: #eaf0f9;
+      border: 1px solid var(--line);
+    }
+
+    :root[data-theme="dark"] .btn.secondary {
+      background: #16243e;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 20px auto;
+      padding: 0 16px 24px;
+    }
+
+    .notice {
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.6;
+    }
+
+    .markdown-body {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .error {
+      color: #9f1239;
+      background: #ffe4e6;
+      border: 1px solid #fecdd3;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .actions {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand" id="title">WebManim Docs Viewer</div>
+    <div class="actions">
+      <button class="btn secondary" id="theme-btn" type="button" aria-label="Toggle docs theme">Theme: system</button>
+      <a class="btn secondary" href="./index.html">Home</a>
+      <a class="btn secondary" href="./webmanim.html">Simulation v2</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="notice">This page renders markdown in-browser. Theme override is supported with <strong>?theme=light</strong> or <strong>?theme=dark</strong>.</div>
+    <article id="content" class="markdown-body">Loading...</article>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var themeBtn = document.getElementById("theme-btn");
+      var themeCss = document.getElementById("md-theme-css");
+      var themeKey = "wm-docs-theme";
+
+      var allowed = {
+        "webmanim-architecture.md": "WebManim Architecture",
+        "GRAMMERV0.1.md": "WebManim Grammar v0.1"
+      };
+
+      var params = new URLSearchParams(window.location.search);
+      var file = params.get("file") || "webmanim-architecture.md";
+      var queryTheme = params.get("theme");
+      var content = document.getElementById("content");
+      var title = document.getElementById("title");
+      var systemPrefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      function normalizeTheme(value) {
+        if (value === "light" || value === "dark" || value === "system") {
+          return value;
+        }
+        return null;
+      }
+
+      function getResolvedTheme(mode) {
+        if (mode === "system") {
+          return systemPrefersDark ? "dark" : "light";
+        }
+        return mode;
+      }
+
+      function applyTheme(mode) {
+        var resolved = getResolvedTheme(mode);
+        if (resolved === "dark") {
+          root.setAttribute("data-theme", "dark");
+          themeCss.href = "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-dark.min.css";
+        } else {
+          root.removeAttribute("data-theme");
+          themeCss.href = "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.8.1/github-markdown-light.min.css";
+        }
+        themeBtn.textContent = "Theme: " + mode;
+      }
+
+      var storedTheme = normalizeTheme(localStorage.getItem(themeKey));
+      var initialTheme = normalizeTheme(queryTheme) || storedTheme || "system";
+      applyTheme(initialTheme);
+
+      themeBtn.addEventListener("click", function () {
+        var sequence = ["system", "light", "dark"];
+        var idx = sequence.indexOf(initialTheme);
+        initialTheme = sequence[(idx + 1) % sequence.length];
+        localStorage.setItem(themeKey, initialTheme);
+        applyTheme(initialTheme);
+      });
+
+      if (!allowed[file]) {
+        content.innerHTML = '<div class="error">Unsupported file. Use one of: webmanim-architecture.md, GRAMMERV0.1.md</div>';
+        title.textContent = "WebManim Docs Viewer";
+        return;
+      }
+
+      title.textContent = allowed[file];
+      document.title = allowed[file] + " - WebManim";
+
+      fetch("./" + file)
+        .then(function (res) {
+          if (!res.ok) {
+            throw new Error("Failed to load " + file + " (" + res.status + ")");
+          }
+          return res.text();
+        })
+        .then(function (md) {
+          content.innerHTML = marked.parse(md);
+        })
+        .catch(function (err) {
+          content.innerHTML = '<div class="error">' + err.message + '</div>';
+        });
+    })();
+  </script>
+</body>
+</html>

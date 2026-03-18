@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WebManim — Interactive Math DSL</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@400;700;800&display=swap"
+            rel="stylesheet">
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #0a0a0f;
+                --panel: #0f0f18;
+                --border: #1e1e32;
+                --accent: #7fff6e;
+                --accent2: #6e8fff;
+                --accent3: #ff6e9c;
+                --text: #c8c8e0;
+                --muted: #4a4a6a;
+                --token-keyword: #ff6e9c;
+                --token-string: #7fff6e;
+                --token-number: #ffd06e;
+                --token-func: #6e8fff;
+                --token-comment: #4a4a6a;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family: 'JetBrains Mono', monospace;
+                height: 100vh;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 12px 24px;
+                border-bottom: 1px solid var(--border);
+                background: var(--panel);
+                flex-shrink: 0;
+            }
+
+            .logo {
+                font-family: 'Syne', sans-serif;
+                font-weight: 800;
+                font-size: 1.2rem;
+                letter-spacing: -0.02em;
+            }
+
+            .logo span {
+                color: var(--accent);
+            }
+
+            .tagline {
+                font-size: 0.7rem;
+                color: var(--muted);
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+            }
+
+            .header-actions {
+                display: flex;
+                gap: 8px;
+            }
+
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 14px;
+                border-radius: 4px;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.75rem;
+                cursor: pointer;
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text);
+                transition: all 0.15s;
+            }
+
+            .btn:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            .btn.primary {
+                background: var(--accent);
+                color: #0a0a0f;
+                border-color: var(--accent);
+                font-weight: 600;
+            }
+
+            .btn.primary:hover {
+                background: #9fffb0;
+            }
+
+            .workspace {
+                display: grid;
+                grid-template-columns: 420px 1fr;
+                flex: 1;
+                overflow: hidden;
+            }
+
+            .editor-panel {
+                display: flex;
+                flex-direction: column;
+                border-right: 1px solid var(--border);
+                overflow: hidden;
+            }
+
+            .panel-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px 16px;
+                border-bottom: 1px solid var(--border);
+                font-size: 0.7rem;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+            }
+
+            .examples-bar {
+                display: flex;
+                gap: 4px;
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--border);
+                overflow-x: auto;
+                flex-shrink: 0;
+            }
+
+            .example-btn {
+                padding: 4px 10px;
+                border-radius: 3px;
+                font-size: 0.68rem;
+                cursor: pointer;
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--muted);
+                font-family: 'JetBrains Mono', monospace;
+                white-space: nowrap;
+                transition: all 0.15s;
+            }
+
+            .example-btn:hover,
+            .example-btn.active {
+                border-color: var(--accent2);
+                color: var(--accent2);
+            }
+
+            .editor-wrapper {
+                flex: 1;
+                overflow: hidden;
+                position: relative;
+            }
+
+            #editor {
+                width: 100%;
+                height: 100%;
+                background: transparent;
+                border: none;
+                outline: none;
+                color: transparent;
+                caret-color: var(--accent);
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.82rem;
+                line-height: 1.7;
+                padding: 16px;
+                resize: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 2;
+                white-space: pre;
+                overflow: auto;
+            }
+
+            #highlight {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.82rem;
+                line-height: 1.7;
+                padding: 16px;
+                pointer-events: none;
+                z-index: 1;
+                white-space: pre;
+                overflow: hidden;
+                color: var(--text);
+            }
+
+            .error-bar {
+                padding: 6px 16px;
+                background: rgba(255, 80, 80, 0.1);
+                border-top: 1px solid rgba(255, 80, 80, 0.3);
+                font-size: 0.72rem;
+                color: #ff8080;
+                display: none;
+                flex-shrink: 0;
+            }
+
+            .error-bar.show {
+                display: block;
+            }
+
+            .scene-panel {
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .scene-toolbar {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 8px 16px;
+                border-bottom: 1px solid var(--border);
+                flex-shrink: 0;
+            }
+
+            .scene-title {
+                font-family: 'Syne', sans-serif;
+                font-weight: 700;
+                font-size: 0.9rem;
+                color: var(--text);
+                flex: 1;
+            }
+
+            .play-btn {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                border: 1px solid var(--accent);
+                background: transparent;
+                color: var(--accent);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.65rem;
+                transition: all 0.15s;
+            }
+
+            .play-btn:hover {
+                background: var(--accent);
+                color: #0a0a0f;
+            }
+
+            .progress-wrap {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex: 1;
+            }
+
+            .progress-track {
+                flex: 1;
+                height: 3px;
+                background: var(--border);
+                border-radius: 2px;
+                cursor: pointer;
+                position: relative;
+            }
+
+            .progress-fill {
+                height: 100%;
+                background: var(--accent);
+                border-radius: 2px;
+                width: 0%;
+            }
+
+            .progress-time {
+                font-size: 0.68rem;
+                color: var(--muted);
+                width: 36px;
+                text-align: right;
+            }
+
+            #canvas-wrap {
+                flex: 1;
+                position: relative;
+                overflow: hidden;
+                background:
+                    radial-gradient(ellipse at 30% 20%, rgba(110, 143, 255, 0.04) 0%, transparent 60%),
+                    radial-gradient(ellipse at 70% 80%, rgba(127, 255, 110, 0.03) 0%, transparent 60%),
+                    var(--bg);
+            }
+
+            #scene-canvas {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .grid-overlay {
+                position: absolute;
+                inset: 0;
+                background-image:
+                    linear-gradient(var(--border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+                background-size: 40px 40px;
+                opacity: 0.3;
+                pointer-events: none;
+            }
+
+            .controls-panel {
+                border-top: 1px solid var(--border);
+                padding: 12px 16px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                min-height: 0;
+                flex-shrink: 0;
+                background: var(--panel);
+            }
+
+            .control-item {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                min-width: 160px;
+            }
+
+            .control-label {
+                font-size: 0.68rem;
+                color: var(--muted);
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .control-label span {
+                color: var(--accent3);
+            }
+
+            .control-slider {
+                -webkit-appearance: none;
+                height: 3px;
+                background: var(--border);
+                border-radius: 2px;
+                outline: none;
+                cursor: pointer;
+                width: 100%;
+            }
+
+            .control-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: var(--accent3);
+                cursor: pointer;
+            }
+
+            .kw {
+                color: var(--token-keyword);
+            }
+
+            .str {
+                color: var(--token-string);
+            }
+
+            .num {
+                color: var(--token-number);
+            }
+
+            .fn {
+                color: var(--token-func);
+            }
+
+            .cm {
+                color: var(--token-comment);
+                font-style: italic;
+            }
+
+            .op {
+                color: var(--muted);
+            }
+
+            .br {
+                color: #aaa;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <header>
+            <div>
+                <div class="logo">web<span>manim</span></div>
+                <div class="tagline">interactive math · declarative DSL</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn primary" onclick="runScene()">&#9654; Run</button>
+            </div>
+        </header>
+
+        <div class="workspace">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <span>scene.wm</span>
+                    <span id="status-dot" style="color:var(--accent)">&#9679; ready</span>
+                </div>
+                <div class="examples-bar">
+                    <button class="example-btn active" onclick="loadExample('sine', event)">sine wave</button>
+                    <button class="example-btn" onclick="loadExample('fourier', event)">fourier</button>
+                    <button class="example-btn" onclick="loadExample('circle', event)">unit circle</button>
+                    <button class="example-btn" onclick="loadExample('derivative', event)">derivative</button>
+                </div>
+                <div class="editor-wrapper">
+                    <textarea id="editor" spellcheck="false" oninput="onEdit()"></textarea>
+                    <div id="highlight"></div>
+                </div>
+                <div class="error-bar" id="error-bar"></div>
+            </div>
+
+            <div class="scene-panel">
+                <div class="scene-toolbar">
+                    <div class="scene-title" id="scene-title">Sine Wave</div>
+                    <div style="display:flex;align-items:center;gap:8px;flex:1">
+                        <button class="play-btn" id="play-btn" onclick="togglePlay()">&#9646;&#9646;</button>
+                        <div class="progress-wrap">
+                            <div class="progress-track" onclick="scrubTimeline(event)">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div class="progress-time" id="progress-time">0.0s</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="canvas-wrap">
+                    <div class="grid-overlay"></div>
+                    <canvas id="scene-canvas" width="800" height="440"></canvas>
+                </div>
+                <div class="controls-panel" id="controls-panel"></div>
+            </div>
+        </div>
+
+        <script>
+            const EXAMPLES = {
+                sine: `scene "Sine Wave" {
+  // Draw coordinate axes
+  axes x: -6..6, y: -2..2
+
+  // Animate the base sine curve
+  plot sin(x) color: #7fff6e duration: 2s
+
+  // Frequency slider
+  slider n range: 1..8 default: 1 label: "frequency"
+
+  // Dynamic plot driven by slider
+  plot sin(n * x) color: #ff6e9c duration: 0.5s
+
+  label "y = sin(nx)" at: 3, 1.5
+}`,
+                fourier: `scene "Fourier Harmonics" {
+  axes x: -6..6, y: -3..3
+
+  // Base sine wave
+  plot sin(x) color: #6e8fff duration: 1s
+
+  slider n range: 1..9 default: 1 label: "harmonics"
+
+  // Fourier square wave approximation
+  plot fourier_square(x, n) color: #7fff6e duration: 0.5s
+  plot sin(x) color: #6e8fff duration: 0s
+
+  label "Square wave: sum of sin((2k-1)x)/(2k-1)" at: -5.8, 2.7
+}`,
+                circle: `scene "Unit Circle" {
+  axes x: -2..2, y: -2..2
+
+  // Draw the unit circle
+  circle center: 0,0 radius: 1 color: #6e8fff duration: 1.5s
+
+  // Angle slider
+  slider theta range: 0..6.28 default: 1.57 label: "angle theta"
+
+  // Point on circle
+  point cos(theta), sin(theta) color: #7fff6e size: 8 duration: 0.3s
+
+  // Radius line
+  line 0,0 to: cos(theta),sin(theta) color: #ffd06e duration: 0.3s
+
+  label "( cos(t), sin(t) )" at: -1.9, 1.8
+}`,
+                derivative: `scene "Derivative Visualized" {
+  axes x: -4..4, y: -2..8
+
+  // f(x) = x squared
+  plot x*x color: #6e8fff duration: 1.5s
+
+  slider a range: -3..3 default: 1 label: "point a"
+
+  // Tangent line at a
+  plot tangent(x*x, a, x) color: #ff6e9c duration: 0.5s
+
+  // Mark the point
+  point a, a*a color: #ffd06e size: 8 duration: 0.3s
+
+  label "f(x) = x squared,  f'(a) = 2a" at: -3.8, 7.2
+}`
+            };
+
+            function parseScene(src) {
+                const scene = { title: '', commands: [] };
+                const titleMatch = src.match(/scene\s+"([^"]+)"/);
+                if (titleMatch) scene.title = titleMatch[1];
+
+                const lines = src.split('\n');
+                for (const rawLine of lines) {
+                    const line = rawLine.replace(/\/\/.*$/, '').trim();
+                    if (!line) continue;
+
+                    const axesM = line.match(/^axes\s+x:\s*([-\d.]+)\.\.([-\d.]+),\s*y:\s*([-\d.]+)\.\.([-\d.]+)/);
+                    if (axesM) { scene.commands.push({ type: 'axes', xMin: +axesM[1], xMax: +axesM[2], yMin: +axesM[3], yMax: +axesM[4] }); continue; }
+
+                    const plotM = line.match(/^plot\s+(.+?)\s+color:\s*(#[0-9a-fA-F]+)(?:\s+duration:\s*([\d.]+)s)?/);
+                    if (plotM) { scene.commands.push({ type: 'plot', expr: plotM[1].trim(), color: plotM[2], duration: +(plotM[3] || 1) }); continue; }
+
+                    const sliderM = line.match(/^slider\s+(\w+)\s+range:\s*([-\d.]+)\.\.([-\d.]+)(?:\s+default:\s*([-\d.]+))?(?:\s+label:\s*"?([^"]+)"?)?/);
+                    if (sliderM) { scene.commands.push({ type: 'slider', name: sliderM[1], min: +sliderM[2], max: +sliderM[3], value: +(sliderM[4] || sliderM[2]), label: sliderM[5] || sliderM[1] }); continue; }
+
+                    const circM = line.match(/^circle\s+center:\s*([-\d.]+),([-\d.]+)\s+radius:\s*([-\d.]+)\s+color:\s*(#[0-9a-fA-F]+)(?:\s+duration:\s*([\d.]+)s)?/);
+                    if (circM) { scene.commands.push({ type: 'circle', cx: +circM[1], cy: +circM[2], r: +circM[3], color: circM[4], duration: +(circM[5] || 1) }); continue; }
+
+                    const ptM = line.match(/^point\s+(.+?),\s*(.+?)\s+color:\s*(#[0-9a-fA-F]+)(?:\s+size:\s*(\d+))?(?:\s+duration:\s*([\d.]+)s)?/);
+                    if (ptM) { scene.commands.push({ type: 'point', xExpr: ptM[1].trim(), yExpr: ptM[2].trim(), color: ptM[3], size: +(ptM[4] || 6), duration: +(ptM[5] || 0.3) }); continue; }
+
+                    const lineM = line.match(/^line\s+([-\d.]+),([-\d.]+)\s+to:\s*(.+?),(.+?)\s+color:\s*(#[0-9a-fA-F]+)(?:\s+duration:\s*([\d.]+)s)?/);
+                    if (lineM) { scene.commands.push({ type: 'line', x1: +lineM[1], y1: +lineM[2], x2Expr: lineM[3].trim(), y2Expr: lineM[4].trim(), color: lineM[5], duration: +(lineM[6] || 0.3) }); continue; }
+
+                    const lblM = line.match(/^label\s+"([^"]+)"\s+at:\s*([-\d.]+),\s*([-\d.]+)/);
+                    if (lblM) { scene.commands.push({ type: 'label', text: lblM[1], x: +lblM[2], y: +lblM[3] }); continue; }
+                }
+                return scene;
+            }
+
+            const canvas = document.getElementById('scene-canvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width, H = canvas.height;
+
+            let currentScene = null;
+            let sliderValues = {};
+            let gsapTimeline = null;
+            let isPlaying = false;
+            let totalDuration = 4;
+            let world = { xMin: -6, xMax: 6, yMin: -2, yMax: 2 };
+
+            function wx(x) { return (x - world.xMin) / (world.xMax - world.xMin) * W; }
+            function wy(y) { return H - (y - world.yMin) / (world.yMax - world.yMin) * H; }
+
+            function evalExpr(expr, vars) {
+                let e = expr;
+                for (const [k, v] of Object.entries(vars)) {
+                    e = e.replace(new RegExp('\\b' + k + '\\b', 'g'), '(' + v + ')');
+                }
+                e = e
+                    .replace(/\bsin\b/g, 'Math.sin')
+                    .replace(/\bcos\b/g, 'Math.cos')
+                    .replace(/\btan\b/g, 'Math.tan')
+                    .replace(/\babs\b/g, 'Math.abs')
+                    .replace(/\bsqrt\b/g, 'Math.sqrt')
+                    .replace(/\bpi\b/g, 'Math.PI')
+                    .replace(/\bfourier_square\((.+?),\s*(.+?)\)/g, function (_, xv, nv) {
+                        return '(function(){var s=0,nn=Math.round(' + nv + ');for(var k=1;k<=nn;k++){s+=Math.sin((2*k-1)*' + xv + ')/(2*k-1);}return s*(4/Math.PI);})()';
+                    })
+                    .replace(/\btangent\((.+?),\s*(.+?),\s*(.+?)\)/g, function (_, f, a, xv) {
+                        const fa = f.replace(/\bx\b/g, '(' + a + ')');
+                        const fah = f.replace(/\bx\b/g, '(' + a + '+0.001)');
+                        const fab = f.replace(/\bx\b/g, '(' + a + '-0.001)');
+                        return '(function(){var av=' + a + ',fa=' + fa + ',fpa=(' + fah + '-' + fab + ')/0.002;return fa+fpa*(' + xv + '-av);})()';
+                    });
+                try { return Function('x', 'return ' + e)(vars.x !== undefined ? vars.x : 0); }
+                catch (e) { return 0; }
+            }
+
+            function clearCanvas() { ctx.clearRect(0, 0, W, H); }
+
+            function drawAxes(cmd) {
+                world = { xMin: cmd.xMin, xMax: cmd.xMax, yMin: cmd.yMin, yMax: cmd.yMax };
+
+                const xStep = (cmd.xMax - cmd.xMin) / 12;
+                const yStep = (cmd.yMax - cmd.yMin) / 8;
+                ctx.strokeStyle = '#16162a';
+                ctx.lineWidth = 1;
+                for (let x = cmd.xMin; x <= cmd.xMax + 0.01; x += xStep) {
+                    ctx.beginPath(); ctx.moveTo(wx(x), 0); ctx.lineTo(wx(x), H); ctx.stroke();
+                }
+                for (let y = cmd.yMin; y <= cmd.yMax + 0.01; y += yStep) {
+                    ctx.beginPath(); ctx.moveTo(0, wy(y)); ctx.lineTo(W, wy(y)); ctx.stroke();
+                }
+
+                ctx.strokeStyle = '#3a3a5a';
+                ctx.lineWidth = 1.5;
+                if (cmd.yMin <= 0 && cmd.yMax >= 0) {
+                    ctx.beginPath(); ctx.moveTo(0, wy(0)); ctx.lineTo(W, wy(0)); ctx.stroke();
+                }
+                if (cmd.xMin <= 0 && cmd.xMax >= 0) {
+                    ctx.beginPath(); ctx.moveTo(wx(0), 0); ctx.lineTo(wx(0), H); ctx.stroke();
+                }
+
+                ctx.fillStyle = '#3a3a5a';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'center';
+                for (let x = Math.ceil(cmd.xMin); x <= cmd.xMax; x++) {
+                    if (x === 0) continue;
+                    ctx.fillText(x, wx(x), wy(0) + 14);
+                }
+                ctx.textAlign = 'right';
+                for (let y = Math.ceil(cmd.yMin); y <= cmd.yMax; y++) {
+                    if (y === 0) continue;
+                    ctx.fillText(y, wx(0) - 4, wy(y) + 3);
+                }
+            }
+
+            function drawPlot(cmd, progress, vars) {
+                const steps = 600;
+                const dx = (world.xMax - world.xMin) / steps;
+                const drawTo = Math.floor(steps * Math.min(progress, 1));
+
+                ctx.beginPath();
+                ctx.strokeStyle = cmd.color;
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = cmd.color;
+                ctx.shadowBlur = 10;
+                ctx.setLineDash([]);
+
+                let started = false;
+                for (let i = 0; i <= drawTo; i++) {
+                    const x = world.xMin + i * dx;
+                    const y = evalExpr(cmd.expr, Object.assign({}, vars, { x: x }));
+                    const cx = wx(x), cy = wy(y);
+                    if (isNaN(cy) || !isFinite(cy) || cy < -H || cy > 2 * H) { started = false; continue; }
+                    if (!started) { ctx.moveTo(cx, cy); started = true; }
+                    else ctx.lineTo(cx, cy);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            function drawCircle(cmd, progress) {
+                const cx = wx(cmd.cx), cy = wy(cmd.cy);
+                const rx = Math.abs(wx(cmd.cx + cmd.r) - cx);
+                ctx.beginPath();
+                ctx.arc(cx, cy, rx, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(progress, 1));
+                ctx.strokeStyle = cmd.color;
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = cmd.color;
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            function drawPoint(cmd, vars) {
+                const x = evalExpr(cmd.xExpr, vars);
+                const y = evalExpr(cmd.yExpr, vars);
+                ctx.beginPath();
+                ctx.arc(wx(x), wy(y), cmd.size, 0, Math.PI * 2);
+                ctx.fillStyle = cmd.color;
+                ctx.shadowColor = cmd.color;
+                ctx.shadowBlur = 18;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            function drawLine(cmd, vars) {
+                const x2 = evalExpr(cmd.x2Expr, vars);
+                const y2 = evalExpr(cmd.y2Expr, vars);
+                ctx.beginPath();
+                ctx.moveTo(wx(cmd.x1), wy(cmd.y1));
+                ctx.lineTo(wx(x2), wy(y2));
+                ctx.strokeStyle = cmd.color;
+                ctx.lineWidth = 2;
+                ctx.shadowColor = cmd.color;
+                ctx.shadowBlur = 8;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            function drawLabel(cmd) {
+                ctx.fillStyle = '#7777aa';
+                ctx.font = '12px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText(cmd.text, wx(cmd.x), wy(cmd.y));
+            }
+
+            let animState = {};
+
+            function renderFrame() {
+                if (!currentScene) return;
+                clearCanvas();
+                const vars = Object.assign({}, sliderValues);
+                for (let i = 0; i < currentScene.commands.length; i++) {
+                    const cmd = currentScene.commands[i];
+                    const prog = animState[i] !== undefined ? animState[i] : 0;
+                    if (cmd.type === 'axes') drawAxes(cmd);
+                    else if (cmd.type === 'plot') drawPlot(cmd, prog, vars);
+                    else if (cmd.type === 'circle') drawCircle(cmd, prog);
+                    else if (cmd.type === 'point' && prog > 0) drawPoint(cmd, vars);
+                    else if (cmd.type === 'line' && prog > 0) drawLine(cmd, vars);
+                    else if (cmd.type === 'label' && prog > 0) drawLabel(cmd);
+                }
+            }
+
+            function buildSliders(scene) {
+                const panel = document.getElementById('controls-panel');
+                panel.innerHTML = '';
+                sliderValues = {};
+                for (const cmd of scene.commands) {
+                    if (cmd.type !== 'slider') continue;
+                    sliderValues[cmd.name] = cmd.value;
+                    const valId = 'val-' + cmd.name;
+                    const item = document.createElement('div');
+                    item.className = 'control-item';
+                    item.innerHTML =
+                        '<div class="control-label">' + cmd.label + ' <span id="' + valId + '">' + cmd.value.toFixed(2) + '</span></div>' +
+                        '<input type="range" class="control-slider" min="' + cmd.min + '" max="' + cmd.max + '" step="' + ((cmd.max - cmd.min) / 200) + '" value="' + cmd.value + '" oninput="updateSlider(\'' + cmd.name + '\', this.value, \'' + valId + '\')">';
+                    panel.appendChild(item);
+                }
+            }
+
+            function updateSlider(name, value, valId) {
+                sliderValues[name] = +value;
+                document.getElementById(valId).textContent = (+value).toFixed(2);
+                renderFrame();
+            }
+
+            function runScene() {
+                const src = document.getElementById('editor').value;
+                let scene;
+                try {
+                    scene = parseScene(src);
+                    document.getElementById('error-bar').classList.remove('show');
+                } catch (e) {
+                    document.getElementById('error-bar').textContent = 'Parse error: ' + e.message;
+                    document.getElementById('error-bar').classList.add('show');
+                    return;
+                }
+
+                currentScene = scene;
+                document.getElementById('scene-title').textContent = scene.title;
+                buildSliders(scene);
+
+                if (gsapTimeline) gsapTimeline.kill();
+                animState = {};
+                for (let i = 0; i < scene.commands.length; i++) animState[i] = 0;
+
+                // Axes drawn immediately
+                for (let i = 0; i < scene.commands.length; i++) {
+                    if (scene.commands[i].type === 'axes') animState[i] = 1;
+                }
+
+                gsapTimeline = gsap.timeline({
+                    onUpdate: function () { renderFrame(); updateProgressUI(); },
+                    onComplete: function () { isPlaying = false; document.getElementById('play-btn').innerHTML = '&#8635;'; }
+                });
+
+                let cursor = 0.2;
+                for (let i = 0; i < scene.commands.length; i++) {
+                    const cmd = scene.commands[i];
+                    if (cmd.type === 'axes' || cmd.type === 'slider') continue;
+                    if (cmd.type === 'label') {
+                        (function (idx) {
+                            gsapTimeline.to({}, { duration: 0, onComplete: function () { animState[idx] = 1; } }, cursor);
+                        })(i);
+                        continue;
+                    }
+                    const dur = cmd.duration || 1;
+                    const proxy = { p: 0 };
+                    (function (idx, prx) {
+                        gsapTimeline.to(prx, {
+                            p: 1, duration: dur, ease: 'power2.inOut',
+                            onUpdate: function () { animState[idx] = prx.p; }
+                        }, cursor);
+                    })(i, proxy);
+                    cursor += dur + 0.1;
+                }
+
+                totalDuration = gsapTimeline.duration() || 1;
+                isPlaying = true;
+                document.getElementById('play-btn').innerHTML = '&#9646;&#9646;';
+            }
+
+            function updateProgressUI() {
+                if (!gsapTimeline) return;
+                const t = gsapTimeline.time();
+                const pct = Math.min(100, (t / totalDuration) * 100);
+                document.getElementById('progress-fill').style.width = pct + '%';
+                document.getElementById('progress-time').textContent = t.toFixed(1) + 's';
+            }
+
+            function togglePlay() {
+                if (!gsapTimeline) { runScene(); return; }
+                if (gsapTimeline.progress() >= 0.999) {
+                    gsapTimeline.restart(); isPlaying = true;
+                    document.getElementById('play-btn').innerHTML = '&#9646;&#9646;';
+                    return;
+                }
+                if (isPlaying) {
+                    gsapTimeline.pause(); isPlaying = false;
+                    document.getElementById('play-btn').innerHTML = '&#9654;';
+                } else {
+                    gsapTimeline.resume(); isPlaying = true;
+                    document.getElementById('play-btn').innerHTML = '&#9646;&#9646;';
+                }
+            }
+
+            function scrubTimeline(e) {
+                if (!gsapTimeline) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                gsapTimeline.pause();
+                gsapTimeline.progress(pct);
+                isPlaying = false;
+                document.getElementById('play-btn').innerHTML = '&#9654;';
+                updateProgressUI();
+                renderFrame();
+            }
+
+            function highlight(src) {
+                return src
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/(\/\/[^\n]*)/g, '<span class="cm">$1</span>')
+                    .replace(/\b(scene|axes|plot|slider|circle|point|line|label|color|duration|range|default|at|to|center|radius|size)\b/g, '<span class="kw">$1</span>')
+                    .replace(/"([^"]*)"/g, '<span class="str">"$1"</span>')
+                    .replace(/\b(sin|cos|tan|sqrt|abs|pi|fourier_square|tangent)\b/g, '<span class="fn">$1</span>')
+                    .replace(/(#[0-9a-fA-F]{3,6})/g, '<span style="color:$1">$1</span>')
+                    .replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>')
+                    .replace(/([{}])/g, '<span class="br">$1</span>');
+            }
+
+            function onEdit() {
+                const src = document.getElementById('editor').value;
+                document.getElementById('highlight').innerHTML = highlight(src);
+            }
+
+            function loadExample(name, e) {
+                document.querySelectorAll('.example-btn').forEach(function (b) { b.classList.remove('active'); });
+                if (e && e.target) e.target.classList.add('active');
+                document.getElementById('editor').value = EXAMPLES[name];
+                onEdit();
+                runScene();
+            }
+
+            document.getElementById('editor').value = EXAMPLES.sine;
+            onEdit();
+            setTimeout(runScene, 300);
+
+            document.getElementById('editor').addEventListener('scroll', function () {
+                document.getElementById('highlight').scrollTop = this.scrollTop;
+                document.getElementById('highlight').scrollLeft = this.scrollLeft;
+            });
+        </script>
+    </body>
+
+</html>

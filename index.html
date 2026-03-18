@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WebManim — Interactive Simulation Platform</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Serif+Display:ital@0;1&display=swap"
+            rel="stylesheet">
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #080b10;
+                --surface: #0d1219;
+                --border: #1c2433;
+                --border-hi: #2e3f55;
+                --ink: #dce6f0;
+                --ink-muted: #6b7f96;
+                --ink-dim: #3a4a5c;
+                --accent: #4fffb0;
+                --accent-dim: #1a4035;
+                --serif: 'DM Serif Display', Georgia, serif;
+                --mono: 'DM Mono', 'Courier New', monospace;
+            }
+
+            [data-theme="light"] {
+                --bg: #f7f9fc;
+                --surface: #ffffff;
+                --border: #dde4ee;
+                --border-hi: #b8c6d9;
+                --ink: #0d1825;
+                --ink-muted: #4a5f74;
+                --ink-dim: #b0bdca;
+                --accent: #007a4e;
+                --accent-dim: #d4f0e4;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--ink);
+                font-family: var(--mono);
+                font-size: 14px;
+                line-height: 1.7;
+                min-height: 100vh;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            /* ── LAYOUT ── */
+            .page {
+                max-width: 860px;
+                margin: 0 auto;
+                padding: 0 28px 100px;
+            }
+
+            /* ── TOP BAR ── */
+            .topbar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 28px 0 0;
+                margin-bottom: 72px;
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 20px;
+            }
+
+            .wordmark {
+                font-family: var(--mono);
+                font-size: 0.82rem;
+                font-weight: 500;
+                color: var(--ink-muted);
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+
+            .wordmark strong {
+                color: var(--accent);
+                font-weight: 500;
+            }
+
+            .theme-btn {
+                background: none;
+                border: 1px solid var(--border);
+                color: var(--ink-muted);
+                font-family: var(--mono);
+                font-size: 0.72rem;
+                padding: 5px 12px;
+                border-radius: 3px;
+                cursor: pointer;
+                letter-spacing: 0.04em;
+                transition: border-color 0.15s, color 0.15s;
+            }
+
+            .theme-btn:hover {
+                border-color: var(--border-hi);
+                color: var(--ink);
+            }
+
+            /* ── HERO ── */
+            .hero {
+                margin-bottom: 80px;
+            }
+
+            .hero-label {
+                font-size: 0.7rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .hero-label::after {
+                content: '';
+                display: block;
+                height: 1px;
+                width: 48px;
+                background: var(--accent-dim);
+            }
+
+            .hero h1 {
+                font-family: var(--serif);
+                font-size: clamp(2.4rem, 5vw, 3.6rem);
+                font-weight: 400;
+                line-height: 1.1;
+                letter-spacing: -0.01em;
+                color: var(--ink);
+                margin-bottom: 28px;
+            }
+
+            .hero h1 em {
+                font-style: italic;
+                color: var(--ink-muted);
+            }
+
+            .hero-body {
+                font-size: 0.92rem;
+                color: var(--ink-muted);
+                line-height: 1.85;
+                max-width: 62ch;
+                margin-bottom: 36px;
+            }
+
+            .hero-body strong {
+                color: var(--ink);
+                font-weight: 500;
+            }
+
+            /* ── CTA ROW ── */
+            .cta-row {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+                flex-wrap: wrap;
+            }
+
+            .btn-primary {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                background: var(--accent);
+                color: #040907;
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                font-weight: 500;
+                padding: 11px 22px;
+                border-radius: 3px;
+                text-decoration: none;
+                letter-spacing: 0.02em;
+                transition: opacity 0.15s;
+            }
+
+            .btn-primary:hover {
+                opacity: 0.88;
+            }
+
+            .btn-ghost {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                background: none;
+                color: var(--ink-muted);
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                padding: 11px 0;
+                text-decoration: none;
+                border-bottom: 1px solid var(--border);
+                transition: color 0.15s, border-color 0.15s;
+                letter-spacing: 0.02em;
+            }
+
+            .btn-ghost:hover {
+                color: var(--ink);
+                border-color: var(--border-hi);
+            }
+
+            .arrow {
+                font-style: normal;
+            }
+
+            /* ── DIVIDER ── */
+            .rule {
+                border: none;
+                border-top: 1px solid var(--border);
+                margin: 64px 0;
+            }
+
+            /* ── SECTION HEADER ── */
+            .sec-header {
+                display: flex;
+                align-items: baseline;
+                gap: 16px;
+                margin-bottom: 32px;
+            }
+
+            .sec-num {
+                font-size: 0.68rem;
+                letter-spacing: 0.1em;
+                color: var(--ink-dim);
+                text-transform: uppercase;
+                flex-shrink: 0;
+                padding-top: 4px;
+            }
+
+            .sec-title {
+                font-family: var(--serif);
+                font-size: 1.5rem;
+                font-weight: 400;
+                color: var(--ink);
+                letter-spacing: -0.01em;
+            }
+
+            /* ── DESTINATION ROWS ── */
+            .dest-list {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .dest-item {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: start;
+                gap: 24px;
+                padding: 24px 0;
+                border-bottom: 1px solid var(--border);
+                text-decoration: none;
+                color: inherit;
+                transition: border-color 0.15s;
+            }
+
+            .dest-item:first-child {
+                border-top: 1px solid var(--border);
+            }
+
+            .dest-item:hover {
+                border-bottom-color: var(--border-hi);
+            }
+
+            .dest-item:hover .dest-arrow {
+                color: var(--ink);
+                transform: translateX(3px);
+            }
+
+            .dest-left {
+                min-width: 0;
+            }
+
+            .dest-tag {
+                font-size: 0.67rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--accent);
+                margin-bottom: 6px;
+            }
+
+            .dest-name {
+                font-family: var(--serif);
+                font-size: 1.15rem;
+                font-weight: 400;
+                color: var(--ink);
+                margin-bottom: 8px;
+                letter-spacing: -0.01em;
+            }
+
+            .dest-desc {
+                font-size: 0.8rem;
+                color: var(--ink-muted);
+                line-height: 1.7;
+                max-width: 52ch;
+            }
+
+            .dest-right {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-shrink: 0;
+                padding-top: 4px;
+            }
+
+            .dest-version {
+                font-size: 0.68rem;
+                color: var(--ink-dim);
+                letter-spacing: 0.06em;
+            }
+
+            .dest-arrow {
+                color: var(--ink-dim);
+                font-size: 1rem;
+                transition: color 0.15s, transform 0.15s;
+            }
+
+            /* ── WHAT'S INSIDE ── */
+            .facts {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 0;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                overflow: hidden;
+                margin-top: 32px;
+            }
+
+            .fact {
+                padding: 22px 20px;
+                border-right: 1px solid var(--border);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .fact:nth-child(2n) {
+                border-right: none;
+            }
+
+            .fact:nth-last-child(-n+2) {
+                border-bottom: none;
+            }
+
+            @media (min-width: 640px) {
+                .facts {
+                    grid-template-columns: repeat(3, 1fr);
+                }
+
+                .fact:nth-child(2n) {
+                    border-right: 1px solid var(--border);
+                }
+
+                .fact:nth-child(3n) {
+                    border-right: none;
+                }
+
+                .fact:nth-last-child(-n+3) {
+                    border-bottom: none;
+                }
+            }
+
+            .fact-label {
+                font-size: 0.67rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--ink-dim);
+                margin-bottom: 8px;
+            }
+
+            .fact-value {
+                font-family: var(--serif);
+                font-size: 1.05rem;
+                color: var(--ink);
+                font-weight: 400;
+                line-height: 1.3;
+            }
+
+            /* ── DSL SAMPLE ── */
+            .dsl-wrap {
+                margin-top: 32px;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+
+            .dsl-bar {
+                background: var(--surface);
+                border-bottom: 1px solid var(--border);
+                padding: 10px 16px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .dsl-filename {
+                font-size: 0.72rem;
+                color: var(--ink-muted);
+                letter-spacing: 0.04em;
+            }
+
+            .dsl-badge {
+                font-size: 0.65rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--accent);
+                border: 1px solid var(--accent-dim);
+                padding: 2px 7px;
+                border-radius: 2px;
+            }
+
+            .dsl-code {
+                background: var(--surface);
+                padding: 20px 20px 24px;
+                overflow-x: auto;
+            }
+
+            .dsl-code pre {
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                line-height: 1.75;
+                color: var(--ink-muted);
+                white-space: pre;
+            }
+
+            .kw {
+                color: #e07b8a;
+            }
+
+            .fn_ {
+                color: #6ea8f7;
+            }
+
+            .num {
+                color: #f0a84e;
+            }
+
+            .str {
+                color: var(--accent);
+            }
+
+            .cm {
+                color: var(--ink-dim);
+                font-style: italic;
+            }
+
+            .id {
+                color: var(--ink);
+            }
+
+            /* ── ROADMAP ── */
+            .roadmap {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+                margin-top: 32px;
+            }
+
+            .rm-row {
+                display: grid;
+                grid-template-columns: 140px 1fr;
+                gap: 24px;
+                padding: 16px 0;
+                border-bottom: 1px solid var(--border);
+                align-items: baseline;
+            }
+
+            .rm-row:first-child {
+                border-top: 1px solid var(--border);
+            }
+
+            .rm-phase {
+                font-size: 0.7rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--ink-dim);
+            }
+
+            .rm-phase.active {
+                color: var(--accent);
+            }
+
+            .rm-desc {
+                font-size: 0.82rem;
+                color: var(--ink-muted);
+                line-height: 1.6;
+            }
+
+            .rm-desc strong {
+                color: var(--ink);
+                font-weight: 500;
+            }
+
+            .rm-dot {
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--accent);
+                margin-right: 8px;
+                vertical-align: middle;
+                position: relative;
+                top: -1px;
+            }
+
+            /* ── FOOTER ── */
+            footer {
+                border-top: 1px solid var(--border);
+                padding-top: 28px;
+                margin-top: 80px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .footer-left {
+                font-size: 0.74rem;
+                color: var(--ink-dim);
+            }
+
+            .footer-right {
+                font-size: 0.74rem;
+                color: var(--ink-dim);
+            }
+
+            .footer-right a {
+                color: var(--ink-muted);
+                text-decoration: none;
+                transition: color 0.15s;
+            }
+
+            .footer-right a:hover {
+                color: var(--ink);
+            }
+
+            /* ── STAGGER REVEAL ── */
+            @keyframes fadeUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(14px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .reveal {
+                opacity: 0;
+                animation: fadeUp 0.5s ease forwards;
+            }
+
+            .reveal-1 {
+                animation-delay: 0.05s;
+            }
+
+            .reveal-2 {
+                animation-delay: 0.15s;
+            }
+
+            .reveal-3 {
+                animation-delay: 0.25s;
+            }
+
+            .reveal-4 {
+                animation-delay: 0.35s;
+            }
+
+            .reveal-5 {
+                animation-delay: 0.45s;
+            }
+
+            @media (max-width: 560px) {
+                .dest-item {
+                    grid-template-columns: 1fr;
+                }
+
+                .dest-right {
+                    display: none;
+                }
+
+                .rm-row {
+                    grid-template-columns: 1fr;
+                    gap: 4px;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="page">
+
+            <!-- TOP BAR -->
+            <header class="topbar reveal reveal-1">
+                <div class="wordmark"><strong>web</strong>manim</div>
+                <button class="theme-btn" id="theme-btn">Light mode</button>
+            </header>
+
+            <!-- HERO -->
+            <section class="hero">
+                <div class="hero-label reveal reveal-1">Simulation platform</div>
+                <h1 class="reveal reveal-2">
+                    Interactive simulations<br>
+                    <em>from a declarative DSL</em>
+                </h1>
+                <p class="hero-body reveal reveal-3">
+                    WebManim describes mathematical and physical models in a readable language,
+                    then executes them as <strong>live, draggable, inspectable scenes</strong> in the browser.
+                    No video. No passive watching. Learners interact directly with the physics.
+                </p>
+                <div class="cta-row reveal reveal-4">
+                    <a class="btn-primary" href="./webmanim.html">
+                        Open simulator <span class="arrow">→</span>
+                    </a>
+                    <a class="btn-ghost" href="./markdown-viewer.html?file=GRAMMERV0.1.md">
+                        Read the DSL spec <span class="arrow">→</span>
+                    </a>
+                </div>
+            </section>
+
+            <hr class="rule reveal reveal-5">
+
+            <!-- DESTINATIONS -->
+            <section class="reveal reveal-5">
+                <div class="sec-header">
+                    <span class="sec-num">01</span>
+                    <h2 class="sec-title">Everything in this repo</h2>
+                </div>
+
+                <nav class="dest-list">
+
+                    <a class="dest-item" href="./webmanim.html">
+                        <div class="dest-left">
+                            <div class="dest-tag">Simulator</div>
+                            <div class="dest-name">WebManim v2</div>
+                            <div class="dest-desc">
+                                Full pipeline — lexer, Pratt parser, AST, engine, renderer.
+                                Pendulum, spring, n-body, diffusion and sine scenes.
+                                Drag objects, adjust sliders, inspect the AST in real time.
+                            </div>
+                        </div>
+                        <div class="dest-right">
+                            <span class="dest-version">current</span>
+                            <span class="dest-arrow">→</span>
+                        </div>
+                    </a>
+
+                    <a class="dest-item" href="./index2.html">
+                        <div class="dest-left">
+                            <div class="dest-tag">Simulator</div>
+                            <div class="dest-name">WebManim v1</div>
+                            <div class="dest-desc">
+                                Original proof of concept. Regex-based parser, GSAP timeline,
+                                four math scenes. Kept as a baseline reference and regression check.
+                            </div>
+                        </div>
+                        <div class="dest-right">
+                            <span class="dest-version">v1 · baseline</span>
+                            <span class="dest-arrow">→</span>
+                        </div>
+                    </a>
+
+                    <a class="dest-item" href="./markdown-viewer.html?file=GRAMMERV0.1.md">
+                        <div class="dest-left">
+                            <div class="dest-tag">Specification</div>
+                            <div class="dest-name">DSL Grammar v0.1</div>
+                            <div class="dest-desc">
+                                Full PEG-style grammar covering every clause — object, scene,
+                                shape, state, evolve, on, render, control, connect, environment.
+                                The grammar is the contract the engine fulfils.
+                            </div>
+                        </div>
+                        <div class="dest-right">
+                            <span class="dest-version">spec · v0.1</span>
+                            <span class="dest-arrow">→</span>
+                        </div>
+                    </a>
+
+                    <a class="dest-item" href="./markdown-viewer.html?file=webmanim-architecture.md">
+                        <div class="dest-left">
+                            <div class="dest-tag">Documentation</div>
+                            <div class="dest-name">Architecture &amp; Vision</div>
+                            <div class="dest-desc">
+                                Eight-section reference covering the five-layer pipeline,
+                                object-event model, full DSL reference, current coverage,
+                                future capabilities and the Rust / WASM migration roadmap.
+                            </div>
+                        </div>
+                        <div class="dest-right">
+                            <span class="dest-version">rendered</span>
+                            <span class="dest-arrow">→</span>
+                        </div>
+                    </a>
+
+                </nav>
+            </section>
+
+            <hr class="rule">
+
+            <!-- DSL SAMPLE -->
+            <section>
+                <div class="sec-header">
+                    <span class="sec-num">02</span>
+                    <h2 class="sec-title">What the DSL looks like</h2>
+                </div>
+
+                <p style="font-size:0.84rem;color:var(--ink-muted);line-height:1.8;max-width:58ch;margin-bottom:0">
+                    Each object owns its physics, shape and event responses.
+                    The scene places instances and wires them together.
+                    The engine runs it at 60 fps.
+                </p>
+
+                <div class="dsl-wrap">
+                    <div class="dsl-bar">
+                        <span class="dsl-filename">pendulum.wm</span>
+                        <span class="dsl-badge">v0.1</span>
+                    </div>
+                    <div class="dsl-code">
+                        <pre><span class="cm">// physics, shape and events live together in the object</span>
+<span class="kw">object</span> <span class="id">Bob</span> {
+  <span class="kw">shape</span>: <span class="id">circle</span>  <span class="kw">r</span>: <span class="num">12</span>  <span class="kw">color</span>: <span class="str">#ff6e9c</span>
+
+  <span class="kw">state</span> {
+    <span class="id">theta</span>:  <span class="num">1.2</span>      <span class="id">omega</span>: <span class="num">0.0</span>
+    <span class="id">L</span>:      <span class="num">160</span>      <span class="id">pivot</span>: [<span class="num">380</span>, <span class="num">60</span>]
+  }
+
+  <span class="kw">evolve</span> <span class="kw">method</span>: <span class="id">rk4</span> {
+    <span class="id">alpha</span>  = -(<span class="num">9.8</span> / <span class="id">L</span>) * <span class="fn_">sin</span>(<span class="id">theta</span>)
+    <span class="id">omega</span> += (<span class="id">alpha</span> - <span class="num">0.01</span> * <span class="id">omega</span>) * <span class="id">dt</span>
+    <span class="id">theta</span> += <span class="id">omega</span> * <span class="id">dt</span>
+  }
+
+  <span class="kw">on</span> <span class="id">drag</span>    { <span class="id">theta</span> = <span class="fn_">atan2</span>(<span class="id">mouse</span>[<span class="num">0</span>] - <span class="id">pivot</span>[<span class="num">0</span>], <span class="id">mouse</span>[<span class="num">1</span>] - <span class="id">pivot</span>[<span class="num">1</span>]) }
+  <span class="kw">on</span> <span class="id">release</span> { <span class="id">omega</span> = <span class="num">0.0</span> }
+
+  <span class="kw">render</span> { <span class="id">trail</span>  <span class="kw">color</span>: <span class="str">#ff6e9c</span>  <span class="kw">opacity</span>: <span class="num">0.3</span> }
+}
+
+<span class="cm">// the scene places instances and exposes controls</span>
+<span class="kw">scene</span> <span class="str">"Pendulum"</span> {
+  <span class="kw">let</span> <span class="id">bob</span> = <span class="id">Bob</span>
+
+  <span class="kw">control</span> {
+    <span class="id">slider</span> <span class="id">bob</span>.<span class="id">L</span>     <span class="kw">range</span>: <span class="num">60</span>..<span class="num">240</span>   <span class="kw">label</span>: <span class="str">"Length"</span>
+    <span class="id">slider</span> <span class="id">bob</span>.<span class="id">mass</span>  <span class="kw">range</span>: <span class="num">0.5</span>..<span class="num">5.0</span>  <span class="kw">label</span>: <span class="str">"Mass"</span>
+    <span class="id">button</span> <span class="str">"Release"</span> { <span class="id">bob</span>.<span class="id">omega</span> = <span class="num">0.0</span> }
+  }
+}</pre>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="rule">
+
+            <!-- WHAT'S INSIDE -->
+            <section>
+                <div class="sec-header">
+                    <span class="sec-num">03</span>
+                    <h2 class="sec-title">What is implemented</h2>
+                </div>
+
+                <div class="facts">
+                    <div class="fact">
+                        <div class="fact-label">Parser</div>
+                        <div class="fact-value">Lexer + Pratt<br>expression parser</div>
+                    </div>
+                    <div class="fact">
+                        <div class="fact-label">Integrators</div>
+                        <div class="fact-value">Euler · RK4<br>Verlet (stub)</div>
+                    </div>
+                    <div class="fact">
+                        <div class="fact-label">Physics</div>
+                        <div class="fact-value">Spring force<br>N-body gravity</div>
+                    </div>
+                    <div class="fact">
+                        <div class="fact-label">Events</div>
+                        <div class="fact-value">drag · release<br>tick · boundary</div>
+                    </div>
+                    <div class="fact">
+                        <div class="fact-label">Render targets</div>
+                        <div class="fact-value">Canvas 2D<br>Math axes · Trails</div>
+                    </div>
+                    <div class="fact">
+                        <div class="fact-label">Boundaries</div>
+                        <div class="fact-value">walls · wrap<br>absorb (stub)</div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="rule">
+
+            <!-- ROADMAP -->
+            <section>
+                <div class="sec-header">
+                    <span class="sec-num">04</span>
+                    <h2 class="sec-title">What comes next</h2>
+                </div>
+
+                <div class="roadmap">
+                    <div class="rm-row">
+                        <span class="rm-phase active"><span class="rm-dot"></span>current</span>
+                        <span class="rm-desc"><strong>JS engine.</strong> Full grammar, ODE scenes, spring / N-body,
+                            drag events, canvas renderer.</span>
+                    </div>
+                    <div class="rm-row">
+                        <span class="rm-phase">Phase 2</span>
+                        <span class="rm-desc"><strong>Rust parser.</strong> pest.rs PEG grammar, JSON AST, Language
+                            Server Protocol for editor tooling.</span>
+                    </div>
+                    <div class="rm-row">
+                        <span class="rm-phase">Phase 3</span>
+                        <span class="rm-desc"><strong>Rust sim core.</strong> State in SharedArrayBuffer, collision
+                            detection, full RK4 / Verlet / leapfrog.</span>
+                    </div>
+                    <div class="rm-row">
+                        <span class="rm-phase">Phase 4</span>
+                        <span class="rm-desc"><strong>SIMD kernels.</strong> Laplacian / gradient for PDE scenes. Heat
+                            diffusion, wave equation, fluid.</span>
+                    </div>
+                    <div class="rm-row">
+                        <span class="rm-phase">Phase 5</span>
+                        <span class="rm-desc"><strong>WebGL + 3-D.</strong> Large particle systems, 3-D coordinate
+                            space, orbital mechanics.</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FOOTER -->
+            <footer>
+                <span class="footer-left">WebManim · v0.1 · work in progress</span>
+                <span class="footer-right">
+                    <a href="./markdown-viewer.html?file=GRAMMERV0.1.md">grammar spec</a>
+                    &nbsp;·&nbsp;
+                    <a href="./markdown-viewer.html?file=webmanim-architecture.md">architecture doc</a>
+                </span>
+            </footer>
+
+        </div>
+
+        <script>
+            (function () {
+                var root = document.documentElement;
+                var btn = document.getElementById('theme-btn');
+                var key = 'wm-theme';
+                var stored = localStorage.getItem(key);
+                var sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                var theme = stored || sys;
+
+                function apply(t) {
+                    root.setAttribute('data-theme', t);
+                    btn.textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
+                }
+
+                apply(theme);
+
+                btn.addEventListener('click', function () {
+                    theme = theme === 'dark' ? 'light' : 'dark';
+                    localStorage.setItem(key, theme);
+                    apply(theme);
+                });
+            })();
+        </script>
+    </body>
+
+</html>

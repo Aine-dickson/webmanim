@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>WebManim v2 — Parser + Engine + Renderer</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Syne:wght@700;800&display=swap"
+            rel="stylesheet">
+        <link rel="stylesheet" href="./src/styles/start.css">
+    </head>
+
+    <body>
+
+        <header>
+            <div class="logo">web<span>manim</span><sub>v2 · parser+engine</sub></div>
+            <div class="examples">
+                <button class="ex on" data-example="pendulum">pendulum</button>
+                <button class="ex" data-example="spring">spring</button>
+                <button class="ex" data-example="nbody">n-body</button>
+                <button class="ex" data-example="diffusion">diffusion</button>
+                <button class="ex" data-example="sine">sine</button>
+                <button class="ex" data-example="bouncer">bouncer</button>
+                <button class="ex" data-example="spiral">spiral</button>
+                <button class="ex" data-example="lissajous">lissajous</button>
+                <button class="ex" data-example="dual">dual</button>
+            </div>
+            <div class="hbtns">
+                <button class="btn" id="btn-ast" >AST</button>
+                <button class="btn run" id="run-btn">▶ Run</button>
+            </div>
+        </header>
+
+        <div class="workspace">
+            <!-- EDITOR -->
+            <div class="epanel">
+                <div class="phead"><span id="fname">scene.wm</span><span id="statusdot" style="color:var(--accent)">●
+                        ready</span></div>
+                <div class="ewrap">
+                    <textarea id="ed" spellcheck="false" ></textarea>
+                    <div id="hl"></div>
+                </div>
+                <div class="astbox" id="astbox"></div>
+                <div class="errbar" id="errbar"></div>
+            </div>
+
+            <!-- SCENE -->
+            <div class="spanel">
+                <div class="stbar">
+                    <div class="stitle" id="stitle">—</div>
+                    <div class="tctrl">
+                        <button class="pbtn" id="pbtn" >▶</button>
+                        <div class="ptrack" >
+                            <div class="pfill" id="pfill"></div>
+                        </div>
+                        <div class="ptime" id="ptime">0.0s</div>
+                        <div class="fps" id="fps">— fps</div>
+                    </div>
+                </div>
+                <div id="cwrap">
+                    <div class="grid-bg"></div>
+                    <canvas id="cv" width="760" height="480"></canvas>
+                </div>
+                <div class="ctrls" id="ctrls"></div>
+                <div class="logbox" id="log">ready.</div>
+            </div>
+        </div>
+
+        <script type="module" src="./src/main.js"></script>
+    </body>
+
+</html>
