@@ -72,6 +72,7 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .btn {
@@ -83,6 +84,10 @@
       padding: 8px 12px;
       font-size: 0.82rem;
       font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
     }
 
     .btn.secondary {
@@ -124,8 +129,64 @@
     }
 
     @media (max-width: 720px) {
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 14px;
+      }
+
+      .brand {
+        width: 100%;
+        font-size: 0.98rem;
+      }
+
       .actions {
         width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .actions .btn {
+        width: 100%;
+        padding: 10px 8px;
+        font-size: 0.78rem;
+        text-align: center;
+      }
+
+      .wrap {
+        margin: 14px auto;
+        padding: 0 12px 20px;
+      }
+
+      .markdown-body {
+        padding: 16px;
+        border-radius: 12px;
+      }
+
+      .markdown-body pre,
+      .markdown-body table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .brand {
+        font-size: 0.92rem;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .actions .btn {
+        font-size: 0.8rem;
+      }
+
+      .markdown-body {
+        padding: 14px;
       }
     }
   </style>
@@ -141,7 +202,7 @@
   </div>
 
   <div class="wrap">
-    <div class="notice">This page renders markdown in-browser. Theme override is supported with <strong>?theme=light</strong> or <strong>?theme=dark</strong>.</div>
+    <!-- <div class="notice">This page renders markdown in-browser. Theme override is supported with <strong>?theme=light</strong> or <strong>?theme=dark</strong>.</div> -->
     <article id="content" class="markdown-body">Loading...</article>
   </div>
 
